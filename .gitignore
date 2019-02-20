@@ -1,0 +1,3 @@
+venv
+assert_certificate.egg-info/
+__pycache__
