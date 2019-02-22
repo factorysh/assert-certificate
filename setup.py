@@ -6,6 +6,8 @@ setup(
     description='',
     install_requires=[
         'x5092json',
+        'cryptography',
+        'certifi'
     ],
     packages=find_packages(exclude=['contrib', 'docs', 'tests']),
     extras_require={
