@@ -35,20 +35,15 @@ def verify_chain(ca, certs):
     certs_keys = list(certs.keys())
     for a in range(len(certs)):
         for cert_key in certs_keys:
-            print(cert_key)
             if cert_key in ca: # Aldreay trusted
-                print('already trusted')
                 certs_keys.remove(cert_key)
                 break
             cert = certs[cert_key]
-            print('issuer', cert.issuer)
             if cert.issuer in ca:
                 verify(ca[cert.issuer], cert)
-                print('verified', cert)
                 ca[cert_key] = cert
                 certs_keys.remove(cert_key)
                 break
-            print('unknown issuer', cert.issuer, cert)
         if len(certs_keys) == 0:
             return True
     return False
