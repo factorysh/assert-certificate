@@ -5,6 +5,7 @@ from cryptography import x509
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives.asymmetric import padding
 from cryptography.hazmat.primitives import hashes
+from cryptography.exceptions import InvalidSignature
 
 
 def read_all_pem(data):
@@ -46,25 +47,30 @@ def trusted_ca():
 def verify_chain(ca, certs):
     ca = ca.copy()
     certs_keys = list(certs.keys())
-    for a in range(len(certs)):
+    while len(certs_keys) > 0:
+        something_happened = False
         for cert_key in certs_keys:
             if cert_key in ca: # Aldreay trusted
                 certs_keys.remove(cert_key)
+                something_happened = True
                 break
             cert = certs[cert_key]
             if cert.issuer in ca:
                 verify(ca[cert.issuer], cert)
                 ca[cert_key] = cert
                 certs_keys.remove(cert_key)
+                something_happened = True
                 break
-        if len(certs_keys) == 0:
-            return True
-    return False
+        if not something_happened:
+            raise InvalidSignature()
 
 
-def verify(ca, cert):
+def verify(issuer, cert):
+    """
+    Verify certificate with its issuer
+    """
     h = cert.signature_hash_algorithm
-    ca.public_key().verify(
+    issuer.public_key().verify(
         cert.signature,
         cert.tbs_certificate_bytes,
         padding.PKCS1v15(),
