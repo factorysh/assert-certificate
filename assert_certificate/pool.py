@@ -7,11 +7,14 @@ from cryptography.hazmat.primitives.asymmetric import padding
 from cryptography.hazmat.primitives import hashes
 
 
-def load_pem_all_certificates(path):
-    p = dict()
+def read_all_pem(data):
+    """
+    data is something readable, like open(path, 'rb')
+    yield on bytes per certificate
+    """
     buff = io.BytesIO()
     cert = False
-    for line in open(path, 'rb'):
+    for line in data:
         if line.startswith(b'-----BEGIN CERTIFICATE-----'):
             cert = True
         if cert:
@@ -19,14 +22,24 @@ def load_pem_all_certificates(path):
         if line.startswith(b'-----END CERTIFICATE-----'):
             cert = False
             buff.seek(0)
-            c = x509.load_pem_x509_certificate(buff.read(), default_backend())
+            yield buff.read()
             buff = io.BytesIO()
-            p[c.subject] = c
+
+
+def load_pem_all_certificates(path):
+    """
+    Read all pem certificate at path
+    Return a dict subject => certificate
+    """
+    p = dict()
+    for pem in read_all_pem(open(path, 'rb')):
+        c = x509.load_pem_x509_certificate(pem, default_backend())
+        p[c.subject] = c
     return p
 
 
 def trusted_ca():
-    "Pool of CA"
+    "Return indexed trusted certificates"
     return load_pem_all_certificates(certifi.where())
 
 
