@@ -46,7 +46,8 @@ def trusted_ca() -> Dict[x509.Name, x509.Certificate]:
     return load_pem_all_certificates(certifi.where())
 
 
-def sort_certs(certs: Dict[x509.Name, x509.Certificate]):
+def sort_certs(certs: Dict[x509.Name, x509.Certificate]) -> \
+    Dict[x509.Name, x509.Certificate]:
     keys = []
     for v in certs.values():
         if v.issuer not in certs or v.issuer == v.subject:
