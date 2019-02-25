@@ -1,5 +1,6 @@
 import io
-from typing import Map, List, Iterable, Generator
+from collections import OrderedDict
+from typing import Dict, List, Iterable, Generator, Any
 
 import certifi
 from cryptography import x509
@@ -9,7 +10,7 @@ from cryptography.hazmat.primitives import hashes
 from cryptography.exceptions import InvalidSignature
 
 
-def read_all_pem(data: Iterable[bytes]) -> Generator[bytes]:
+def read_all_pem(data: Iterable[bytes]) -> Generator[bytes, None, None]:
     """
     data is something readable, like open(path, 'rb')
     yield on bytes per certificate
@@ -28,7 +29,7 @@ def read_all_pem(data: Iterable[bytes]) -> Generator[bytes]:
             buff = io.BytesIO()
 
 
-def load_pem_all_certificates(path: str) -> Map[x509.Name, x509.Certificate]:
+def load_pem_all_certificates(path: str) -> Dict[x509.Name, x509.Certificate]:
     """
     Read all pem certificate at path
     Return a dict subject => certificate
@@ -40,13 +41,35 @@ def load_pem_all_certificates(path: str) -> Map[x509.Name, x509.Certificate]:
     return p
 
 
-def trusted_ca() -> Map[x509.Name, x509.Certificate]:
+def trusted_ca() -> Dict[x509.Name, x509.Certificate]:
     "Return indexed trusted certificates"
     return load_pem_all_certificates(certifi.where())
 
 
-def verify_chain(ca: Map[x509.Name, x509.Certificate],
-                 certs: Map[x509.Name, x509.Certificate]):
+def sort_certs(certs: Dict[x509.Name, x509.Certificate]):
+    keys = []
+    for v in certs.values():
+        if v.issuer not in certs or v.issuer == v.subject:
+            keys.append(v.subject)
+            break
+    assert len(keys) > 0, "A first key is needed"
+    unsorted = list(certs.keys()).copy()
+    unsorted.remove(keys[0])
+    while len(keys) < len(certs):
+        something_happened = False
+        for k in unsorted:
+            v = certs[k]
+            if v.issuer == keys[-1]:
+                keys.append(k)
+                unsorted.remove(k)
+                something_happened = True
+                break
+        assert something_happened, "Chain is broken"
+    return OrderedDict((k, certs[k]) for k in keys)
+
+
+def verify_chain(ca: Dict[x509.Name, x509.Certificate],
+                 certs: Dict[x509.Name, x509.Certificate]):
     ca = ca.copy()
     certs_keys = list(certs.keys())
     while len(certs_keys) > 0:
