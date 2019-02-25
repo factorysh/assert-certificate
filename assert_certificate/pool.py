@@ -1,4 +1,5 @@
 import io
+from typing import Map, List, Iterable, Generator
 
 import certifi
 from cryptography import x509
@@ -8,7 +9,7 @@ from cryptography.hazmat.primitives import hashes
 from cryptography.exceptions import InvalidSignature
 
 
-def read_all_pem(data):
+def read_all_pem(data: Iterable[bytes]) -> Generator[bytes]:
     """
     data is something readable, like open(path, 'rb')
     yield on bytes per certificate
@@ -27,7 +28,7 @@ def read_all_pem(data):
             buff = io.BytesIO()
 
 
-def load_pem_all_certificates(path):
+def load_pem_all_certificates(path: str) -> Map[x509.Name, x509.Certificate]:
     """
     Read all pem certificate at path
     Return a dict subject => certificate
@@ -39,12 +40,13 @@ def load_pem_all_certificates(path):
     return p
 
 
-def trusted_ca():
+def trusted_ca() -> Map[x509.Name, x509.Certificate]:
     "Return indexed trusted certificates"
     return load_pem_all_certificates(certifi.where())
 
 
-def verify_chain(ca, certs):
+def verify_chain(ca: Map[x509.Name, x509.Certificate],
+                 certs: Map[x509.Name, x509.Certificate]):
     ca = ca.copy()
     certs_keys = list(certs.keys())
     while len(certs_keys) > 0:
@@ -65,7 +67,7 @@ def verify_chain(ca, certs):
             raise InvalidSignature()
 
 
-def verify(issuer, cert):
+def verify(issuer: x509.Certificate, cert: x509.Certificate):
     """
     Verify certificate with its issuer
     """
