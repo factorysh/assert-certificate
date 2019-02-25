@@ -12,4 +12,4 @@ def certificate():
 def test_certificate(certificate):
     ca = trusted_ca()
     google = load_pem_all_certificates('wwwgooglecom.crt')
-    assert verify_chain(ca, google)
+    verify_chain(ca, google)
