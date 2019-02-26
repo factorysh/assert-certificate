@@ -1,7 +1,9 @@
+from cryptography import x509
+
 from assert_certificate import dnsname
 
 
-def assert_www(certificate):
+def assert_www(certificate: x509.Certificate):
     """
     each DNSname has its www counterpart, or a star counterpart
     """
