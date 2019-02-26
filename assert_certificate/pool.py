@@ -71,23 +71,11 @@ def sort_certs(certs: Dict[x509.Name, x509.Certificate]) -> \
 def verify_chain(ca: Dict[x509.Name, x509.Certificate],
                  certs: Dict[x509.Name, x509.Certificate]):
     ca = ca.copy()
-    certs_keys = list(certs.keys())
-    while len(certs_keys) > 0:
-        something_happened = False
-        for cert_key in certs_keys:
-            if cert_key in ca: # Aldreay trusted
-                certs_keys.remove(cert_key)
-                something_happened = True
-                break
-            cert = certs[cert_key]
-            if cert.issuer in ca:
-                verify(ca[cert.issuer], cert)
-                ca[cert_key] = cert
-                certs_keys.remove(cert_key)
-                something_happened = True
-                break
-        if not something_happened:
-            raise InvalidSignature()
+    if not isinstance(certs, OrderedDict):
+        certs = sort_certs(certs)
+    for cert in certs.values():
+        verify(ca[cert.issuer], cert)
+        ca[cert.subject] = cert
 
 
 def verify(issuer: x509.Certificate, cert: x509.Certificate):
