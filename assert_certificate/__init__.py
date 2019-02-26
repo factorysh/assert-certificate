@@ -1,24 +1,14 @@
-from x5092json import x509parser
+from typing import List
+
+from cryptography.x509.oid import NameOID
+from cryptography import x509
 
 
-def parse_certificate(data):
-    certificate = x509parser.READERS['PEM'](data)
-    return x509parser.parse(certificate)
+def subject_common_name(certificate: x509.Certificate) -> str:
+    return certificate.subject.get_attributes_for_oid(
+        NameOID.COMMON_NAME)[0].value
 
 
-def get(certificate, key1, key2):
-    for a in certificate[key1]:
-        if a['oid']['name'] == key2:
-            return a['value']
-    return None
-
-
-def subject_common_name(certificate):
-    return get(certificate, 'subject', 'commonName')
-
-
-def dnsname(certificate):
-    altnames = get(certificate, 'extensions', 'subjectAltName')
-    if altnames is None:
-        return None
-    return [ n['dnsname_value'] for n in altnames]
+def dnsname(certificate: x509.Certificate) -> List[str]:
+    return certificate.extensions.get_extension_for_class(
+        x509.SubjectAlternativeName).value.get_values_for_type(x509.DNSName)

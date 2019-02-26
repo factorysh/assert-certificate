@@ -5,7 +5,6 @@ setup(
     version='0.0.1.dev0',
     description='',
     install_requires=[
-        'x5092json',
         'cryptography',
         'certifi'
     ],
