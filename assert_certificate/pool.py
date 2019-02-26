@@ -48,22 +48,21 @@ def trusted_ca() -> Dict[x509.Name, x509.Certificate]:
 
 def sort_certs(certs: Dict[x509.Name, x509.Certificate]) -> \
     Dict[x509.Name, x509.Certificate]:
-    keys = []
-    for v in certs.values():
-        if v.issuer not in certs or v.issuer == v.subject:
-            keys.append(v.subject)
-            break
-    assert len(keys) > 0, "A first key is needed"
     unsorted = list(certs.keys()).copy()
-    unsorted.remove(keys[0])
+    keys = [unsorted.pop()]
     while len(keys) < len(certs):
         something_happened = False
         for k in unsorted:
             v = certs[k]
-            if v.issuer == keys[-1]:
+            first, last = certs[keys[0]], certs[keys[-1]]
+            if v.issuer == last.subject:
                 keys.append(k)
-                unsorted.remove(k)
                 something_happened = True
+            elif v.subject == first.issuer:
+                keys.insert(0, k)
+                something_happened = True
+            if something_happened:
+                unsorted.remove(k)
                 break
         assert something_happened, "Chain is broken"
     return OrderedDict((k, certs[k]) for k in keys)
