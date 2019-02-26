@@ -16,5 +16,6 @@ def test_certificate(certificate):
 
 
 def test_sort(certificate):
-    google = load_pem_all_certificates('wwwgooglecom.crt')
-    print(sort_certs(google))
+    google = sort_certs(load_pem_all_certificates('wwwgooglecom.crt'))
+    assert list(google.values())[0].subject.rdns[0].rfc4514_string() == \
+        'OU=GlobalSign Root CA - R2'
