@@ -1,5 +1,6 @@
 from typing import Dict, List, Iterable, Generator, Any
 import io
+from collections import OrderedDict
 
 from cryptography import x509
 from cryptography.hazmat.backends import default_backend
@@ -34,3 +35,31 @@ def load_pem_all_certificates(path: str) -> Dict[x509.Name, x509.Certificate]:
         c = x509.load_pem_x509_certificate(pem, default_backend())
         p[c.subject] = c
     return p
+
+
+def load_pem_last_certificate(path: str) -> x509.Certificate:
+    all = sort_certs(load_pem_all_certificates(path))
+    return list(all.values())[-1]
+
+
+def sort_certs(certs: Dict[x509.Name, x509.Certificate]) -> \
+    Dict[x509.Name, x509.Certificate]:
+    unsorted = list(certs.keys()).copy()
+    keys = [unsorted.pop()]
+    while len(keys) < len(certs):
+        something_happened = False
+        for k in unsorted:
+            v = certs[k]
+            first, last = certs[keys[0]], certs[keys[-1]]
+            if v.issuer == last.subject:
+                keys.append(k)
+                something_happened = True
+            elif v.subject == first.issuer:
+                keys.insert(0, k)
+                something_happened = True
+            if something_happened:
+                unsorted.remove(k)
+                break
+        assert something_happened, "Chain is broken"
+    return OrderedDict((k, certs[k]) for k in keys)
+

@@ -10,34 +10,13 @@ from cryptography.hazmat.primitives import hashes
 from cryptography.exceptions import InvalidSignature
 
 from assert_certificate.certificate import (read_all_pem,
-                                            load_pem_all_certificates)
+                                            load_pem_all_certificates,
+                                            sort_certs)
 
 
 def trusted_ca() -> Dict[x509.Name, x509.Certificate]:
     "Return indexed trusted certificates"
     return load_pem_all_certificates(certifi.where())
-
-
-def sort_certs(certs: Dict[x509.Name, x509.Certificate]) -> \
-    Dict[x509.Name, x509.Certificate]:
-    unsorted = list(certs.keys()).copy()
-    keys = [unsorted.pop()]
-    while len(keys) < len(certs):
-        something_happened = False
-        for k in unsorted:
-            v = certs[k]
-            first, last = certs[keys[0]], certs[keys[-1]]
-            if v.issuer == last.subject:
-                keys.append(k)
-                something_happened = True
-            elif v.subject == first.issuer:
-                keys.insert(0, k)
-                something_happened = True
-            if something_happened:
-                unsorted.remove(k)
-                break
-        assert something_happened, "Chain is broken"
-    return OrderedDict((k, certs[k]) for k in keys)
 
 
 def verify_chain(ca: Dict[x509.Name, x509.Certificate],
